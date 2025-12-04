@@ -1,0 +1,66 @@
+|00 @System/vector $2 &expansion $2 &wst $1 &rst $1 &metadata $2 &r $2 &g $2 &b $2 &debug $1 &state $1
+|10 @Console/vector $2 &read $5 &type $1 &write $1 &error $3 &addr $2 &mode $1 &exec $1
+
+
+|100 @on-reset ( -> )
+  .Console/type DEI
+    ?{ ;dict/no-args str/<print> <fail> }
+  parse/<init>
+
+@parse/<init>
+  ;parse/args .Console/vector DEO2
+  BRK
+
+@parse/args
+  ;&argptr LDA2 .Console/read DEI DUP #0a NEQ ?{
+    ROT ROT INC2 INC2 DUP2 ;&argptr STA2 LDA2 
+    ?{?{ cmd/send }}
+    [ LIT 04 -Console/type ] DEI NEQ
+      ?{ ;dict/no-args str/<print> <fail> }
+    BRK
+  }
+  ROT ROT LDA2k INC2k ROT2 STA2 STA
+  BRK
+
+  &arglist =curl/year =curl/day =curl/filename =curl/session $2 
+  &argptr =&arglist
+
+
+@cmd/send
+  ;curl .Console/addr DEO2
+  [ LIT2 02 -Console/mode ] DEO
+  [ LIT2 01 -Console/exec ] DEO
+  ;&handle .Console/vector DEO2
+  BRK
+
+@cmd/handle
+  .Console/read DEI .Console/write DEO
+  [ LIT2 04 -Console/type ] DEI EQU
+      ?{ <terminate> }
+  BRK
+
+( @|Utils )
+
+@<fail>
+  [ LIT2 01 -System/state ] DEO
+  BRK
+
+@<terminate>
+  [ LIT2 80 -System/state ] DEO
+  BRK
+
+@str/<print>
+	LDAk DUP ?{ POP POP2 JMP2r }
+	.Console/write DEO
+	INC2 !/<print>
+
+( @|Data )
+
+@dict
+	&no-args "Too 20 "few 20 "arguments! 20 "expected 20 "<year> 20 "<day> 20 "filename 20 "<aoc-session> 0a $1
+
+@curl "curl 20 "$(echo 20 "https://adventofcode.com/ 
+  &year $4 "/day/ 
+  &day 20 20 "/input 20 "| 20 "sed 20 22 "s/ 20 "//g 22 ") 20 "--cookie 20 22 "session= 
+  &session $80 22 20 "> 20
+  &filename

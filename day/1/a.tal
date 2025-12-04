@@ -1,0 +1,24 @@
+|00 @System/vector $2 &expansion $2 &wst $1 &rst $1 &metadata $2 &r $2 &g $2 &b $2 &debug $1 &state $1
+|10 @Console/vector $2 &read $5 &type $1 &write $1 &error $3 &addr $2 &mode $1 &exec $1
+
+
+|100 @on-reset ( -> )
+  ;input .Console/vector DEO2
+  BRK
+
+@input ( -> )
+  .Console/read DEI .Console/write DEO
+  BRK
+
+( @|Utils )
+
+@<terminate> ( -- )
+  [ LIT2 80 -System/state ] DEO
+  BRK
+
+@str/<print> ( str* -- )
+	LDAk DUP ?{ POP POP2 JMP2r }
+	.Console/write DEO
+	INC2 !/<print>
+
+( @|Data )
