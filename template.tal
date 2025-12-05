@@ -1,18 +1,40 @@
 |00 @System/vector $2 &expansion $2 &wst $1 &rst $1 &metadata $2 &r $2 &g $2 &b $2 &debug $1 &state $1
 |10 @Console/vector $2 &read $5 &type $1 &write $1 &error $3 &addr $2 &mode $1 &exec $1
 
+( @|Macros )
+%PCHAR { .Console/write DEO } ( char -- )
+%DIVMOD { DIVk STHk MUL SUB STHr SWP } ( a b -- a/b a%b )
+%DIVMOD2 { DIV2k STH2k MUL2 SUB2 STH2r SWP2 } ( a b -- a/b a%b )
 
+( @|Start )
 |100 @on-reset ( -> )
 
 ( @|Utils )
-
-@<terminate>
+@<terminate> ( -- )
   [ LIT2 80 -System/state ] DEO
   BRK
 
-@str/<print>
+@<print> ( str* -- )
 	LDAk DUP ?{ POP POP2 JMP2r }
 	.Console/write DEO
-	INC2 !/<print>
+	INC2 !<print>
 
-( @|Data )
+@<printrev> ( str* -- )
+	LDAk DUP ?{ POP POP2 JMP2r }
+	.Console/write DEO
+	#0001 SUB2 !<printrev>
+
+@<printnum> ( num -- )
+  ;&out ,&ptr STR2
+  &inner DUP #0a DIVk MUL SUB 
+  #30 ADD [ LIT2 &ptr $2 ] STAk INC2 ,&ptr STR2 POP
+  #0a DIV DUP ?{ POP ,&ptr LDR2 #0001 SUB2 <printrev> JMP2r } !&inner
+  $1 &out $4
+
+@<printnum2> ( num -- )
+  ;&out ,&ptr STR2
+  &inner DUP2 #000a DIV2k MUL2 SUB2
+  SWP POP #30 ADD [ LIT2 &ptr $2 ] STAk INC2 ,&ptr STR2 POP
+  #000a DIV2 DUP2 #0000 NEQ2 ?{ POP2 ,&ptr LDR2 #0001 SUB2 <printrev> JMP2r } !&inner
+  $1 20 &out $6
+

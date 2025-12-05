@@ -1,14 +1,41 @@
 |00 @System/vector $2 &expansion $2 &wst $1 &rst $1 &metadata $2 &r $2 &g $2 &b $2 &debug $1 &state $1
 |10 @Console/vector $2 &read $5 &type $1 &write $1 &error $3 &addr $2 &mode $1 &exec $1
 
+%PCHAR { .Console/write DEO }
 
 |100 @on-reset ( -> )
   ;input .Console/vector DEO2
   BRK
 
 @input ( -> )
-  .Console/read DEI .Console/write DEO
+  .Console/read DEI
+  DUP #00 NEQ ?{ [ LIT2 &answer $2 ] <printnum2> <terminate> }
+
+  ( |end of command )
+  DUP #0a NEQ ?{
+    ,&amount LDR2 #0064 DIV2k MUL2 SUB2 ,&amount STR2
+    [ LIT2 $1 &correction $1 ] [ LIT2 &amount $2 ] &direction $1 [ LIT2 &total 0032 ] ADD2
+    #0064 DIV2k MUL2 SUB2 
+    DUP2 ,&total STR2 #0000 NEQ2
+      ?{ ,&answer LDR2 INC2 ,&answer STR2 }
+    #0000 ,&amount STR2 
+    BRK
+  }
+  ( |left )
+  DUP #4c NEQ
+  ?{ #64 ,&correction STR #39 ,&direction STR BRK }
+  ( |right )
+  DUP #52 NEQ
+  ?{ #00 ,&correction STR #38 ,&direction STR BRK }
+  ( |process number )
+  #30 SUB #00 SWP ,&amount LDR2 #000a MUL2 ADD2 ,&amount STR2
   BRK
+
+  &lmsg "left $1
+  &rmsg "right $1
+  &processmsg "processing $1
+  &numbermsg "number $1
+  &foundmsg "found $1
 
 ( @|Utils )
 
@@ -16,9 +43,26 @@
   [ LIT2 80 -System/state ] DEO
   BRK
 
-@str/<print> ( str* -- )
+@<print> ( str* -- )
 	LDAk DUP ?{ POP POP2 JMP2r }
 	.Console/write DEO
-	INC2 !/<print>
+	INC2 !<print>
 
-( @|Data )
+@<printrev> ( str* -- )
+	LDAk DUP ?{ POP POP2 JMP2r }
+	.Console/write DEO
+	#0001 SUB2 !<printrev>
+
+@<printnum> ( num -- )
+  ;&out ,&ptr STR2
+  &inner DUP #0a DIVk MUL SUB 
+  #30 ADD [ LIT2 &ptr $2 ] STAk INC2 ,&ptr STR2 POP
+  #0a DIV DUP ?{ POP ,&ptr LDR2 #0001 SUB2 <printrev> JMP2r } !&inner
+  $1 &out $4
+
+@<printnum2> ( num -- )
+  ;&out ,&ptr STR2
+  &inner DUP2 #000a DIV2k MUL2 SUB2
+  SWP POP #30 ADD [ LIT2 &ptr $2 ] STAk INC2 ,&ptr STR2 POP
+  #000a DIV2 DUP2 #0000 NEQ2 ?{ POP2 ,&ptr LDR2 #0001 SUB2 <printrev> JMP2r } !&inner
+  $1 &out $6
